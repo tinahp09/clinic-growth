@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Calendar, Clock, Star, User } from 'lucide-react';
+import { Plus, Edit, Calendar, Clock, User, Eye } from 'lucide-react';
 import { STAFF, STAFF_ROLE_LABELS, type StaffRole } from '../../data/mockData';
-import { toPersian, JALALI_WEEKDAYS_FULL } from '../../utils/persian';
+import { STAFF_LEAVES, LEAVE_TYPE_LABELS, LEAVE_STATUS_LABELS } from '../../data/mockData';
+import { toPersian, JALALI_WEEKDAYS_FULL, todayJalali } from '../../utils/persian';
+import { JalaliCalendarPicker } from '../../components/clinic/JalaliCalendarPicker';
 
 const ROLE_COLORS: Record<StaffRole, string> = {
   DOCTOR: 'bg-teal-50 text-teal-700 border-teal-200',
@@ -12,8 +14,44 @@ const ROLE_COLORS: Record<StaffRole, string> = {
 
 export default function StaffManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<typeof STAFF[0] | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showLeavesView, setShowLeavesView] = useState(false);
+  const [leaveStartDate, setLeaveStartDate] = useState<{ jy: number; jm: number; jd: number; date: Date } | null>(null);
+  const [leaveEndDate, setLeaveEndDate] = useState<{ jy: number; jm: number; jd: number; date: Date } | null>(null);
 
   const daysMap = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+
+  const currentMonth = todayJalali().jm;
+  const currentYear = todayJalali().jy;
+
+  const getLeaveDaysUsed = (staffId: string) => {
+    const staffLeaves = STAFF_LEAVES.filter(
+      l => l.staffId === staffId && l.status === 'APPROVED'
+    );
+    let used = 0;
+    staffLeaves.forEach(leave => {
+      const startParts = leave.startDate.split('/').map(Number);
+      const endParts = leave.endDate.split('/').map(Number);
+      const [leaveYear, startMonth, startDay] = startParts;
+      const [_, endMonth, endDay] = endParts;
+      
+      if (leaveYear !== currentYear) return;
+      if (startMonth > currentMonth || endMonth < currentMonth) return;
+      
+      const daysInStartMonth = startMonth === endMonth 
+        ? endDay - startDay + 1 
+        : (30 - startDay + 1) + endDay;
+      used += daysInStartMonth;
+    });
+    return used;
+  };
+
+  const getLeaveQuota = (staffId: string) => {
+    const staff = STAFF.find(s => s.id === staffId);
+    return staff?.annualLeaveQuota || 12;
+  };
 
   return (
     <div className="p-6" dir="rtl">
@@ -28,6 +66,13 @@ export default function StaffManagement() {
         >
           <Plus size={16} />
           کارمند جدید
+        </button>
+        <button
+          onClick={() => setShowLeavesView(true)}
+          className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-200"
+        >
+          <Eye size={16} />
+          مشاهده مرخصی‌ها
         </button>
       </div>
 
@@ -101,22 +146,31 @@ export default function StaffManagement() {
                 <p className="text-base font-bold text-blue-700">{toPersian(Math.floor(Math.random() * 2) + 3)}</p>
                 <p className="text-xs text-blue-600">امروز</p>
               </div>
-              <div className="text-center bg-amber-50 rounded-xl p-2">
-                <div className="flex items-center justify-center gap-0.5">
-                  <Star size={12} className="text-amber-500 fill-amber-500" />
-                  <p className="text-base font-bold text-amber-700">{(4.5 + Math.random() * 0.5).toFixed(1)}</p>
-                </div>
-                <p className="text-xs text-amber-600">امتیاز</p>
+              <div className="text-center bg-purple-50 rounded-xl p-2">
+                {(() => {
+                  const used = getLeaveDaysUsed(staff.id);
+                  const quota = getLeaveQuota(staff.id);
+                  const remaining = quota - used;
+                  return (
+                    <>
+                      <p className="text-base font-bold text-purple-700">
+                        <span className={remaining <= 0 ? 'text-red-600' : ''}>{toPersian(remaining)}</span>
+                        <span className="text-xs text-purple-500"> / {toPersian(quota)}</span>
+                      </p>
+                      <p className="text-xs text-purple-600">مرخصی مانده</p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors">
+              <button onClick={() => { setSelectedStaff(staff); setShowEditModal(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors">
                 <Edit size={13} />
                 ویرایش
               </button>
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors">
+              <button onClick={() => { setSelectedStaff(staff); setShowLeaveModal(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors">
                 <Calendar size={13} />
                 مرخصی
               </button>
@@ -158,6 +212,139 @@ export default function StaffManagement() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowAddForm(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">انصراف</button>
               <button onClick={() => setShowAddForm(false)} className="flex-1 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold">ذخیره</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {showEditModal && selectedStaff && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="font-bold text-slate-800 text-lg mb-5">ویرایش اطلاعات کارمند</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">نام و نام خانوادگی</label>
+                <input type="text" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" defaultValue={selectedStaff.name} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">تخصص</label>
+                <input type="text" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" defaultValue={selectedStaff.specialty} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">نقش</label>
+                <select className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white" defaultValue={selectedStaff.role}>
+                  <option value="DOCTOR">پزشک</option>
+                  <option value="NURSE">پرستار</option>
+                  <option value="TECHNICIAN">تکنسین</option>
+                  <option value="RECEPTIONIST">پذیرش</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1.5">شروع کار</label>
+                  <input type="time" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 ltr" defaultValue={selectedStaff.workStart} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1.5">پایان کار</label>
+                  <input type="time" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 ltr" defaultValue={selectedStaff.workEnd} />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">انصراف</button>
+              <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold">ذخیره</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave modal */}
+      {showLeaveModal && selectedStaff && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-slate-800 text-lg mb-2">درخواست مرخصی</h3>
+            <p className="text-sm text-slate-500 mb-5">{selectedStaff.name}</p>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">تاریخ شروع</label>
+                <JalaliCalendarPicker
+                  selectedDate={leaveStartDate}
+                  onSelect={setLeaveStartDate}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1.5">تاریخ پایان</label>
+                <JalaliCalendarPicker
+                  selectedDate={leaveEndDate}
+                  onSelect={setLeaveEndDate}
+                  minDate={leaveStartDate || undefined}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 block mb-1.5">نوع مرخصی</label>
+              <select className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+                <option>مرخصی استعلاجی</option>
+                <option>مرخصی سالانه</option>
+                <option>مرخصی بدون حقوق</option>
+              </select>
+            </div>
+            <div className="mt-4">
+              <label className="text-sm font-medium text-slate-700 block mb-1.5">توضیحات</label>
+              <textarea className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" rows={3} placeholder="توضیحات مرخصی..." />
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowLeaveModal(false); setLeaveStartDate(null); setLeaveEndDate(null); }} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">انصراف</button>
+              <button onClick={() => setShowLeaveModal(false)} className="flex-1 py-3 rounded-xl bg-teal-600 text-white text-sm font-semibold">ارسال درخواست</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaves view modal */}
+      {showLeavesView && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-slate-800 text-lg">مرخصی‌های کارمندان</h3>
+              <button onClick={() => setShowLeavesView(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            
+            <div className="space-y-3">
+              {STAFF_LEAVES.length === 0 ? (
+                <p className="text-center text-slate-400 py-8">هیچ مرخصی ثبت نشده است</p>
+              ) : (
+                STAFF_LEAVES.map(leave => (
+                  <div key={leave.id} className="bg-slate-50 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-semibold text-slate-800">{leave.staffName}</p>
+                        <p className="text-sm text-slate-500">{leave.startDate} — {leave.endDate}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full border font-medium ${LEAVE_STATUS_LABELS[leave.status].color}`}>
+                        {LEAVE_STATUS_LABELS[leave.status].label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 bg-slate-200 text-slate-600 rounded-lg">
+                        {LEAVE_TYPE_LABELS[leave.type]}
+                      </span>
+                      {leave.description && (
+                        <p className="text-xs text-slate-500">{leave.description}</p>
+                      )}
+                    </div>
+                    {leave.status === 'PENDING' && (
+                      <div className="flex gap-2 mt-3">
+                        <button className="flex-1 py-2 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600">تایید</button>
+                        <button className="flex-1 py-2 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600">رد</button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

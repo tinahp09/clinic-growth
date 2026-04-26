@@ -27,6 +27,7 @@ export interface Staff {
   availableDays: number[]; // 0=Saturday, 6=Friday (Jalali)
   workStart: string; // HH:MM
   workEnd: string;
+  annualLeaveQuota?: number; // days per year
 }
 
 export interface Room {
@@ -83,6 +84,21 @@ export interface Refund {
   requestedAt: string;
   processedAt?: string;
   refundRef?: string;
+}
+
+export type LeaveType = 'SICK' | 'ANNUAL' | 'UNPAID';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface StaffLeave {
+  id: string;
+  staffId: string;
+  staffName: string;
+  startDate: string; // ISO date
+  endDate: string;
+  type: LeaveType;
+  status: LeaveStatus;
+  description?: string;
+  requestedAt: string;
 }
 
 // === SERVICES ===
@@ -171,6 +187,7 @@ export const STAFF: Staff[] = [
     availableDays: [0, 1, 2, 3, 4], // Sat-Wed
     workStart: '09:00',
     workEnd: '17:00',
+    annualLeaveQuota: 15,
   },
   {
     id: 'stf-002',
@@ -181,6 +198,7 @@ export const STAFF: Staff[] = [
     availableDays: [0, 1, 3, 4, 5], // Sat, Sun, Tue, Wed, Thu
     workStart: '10:00',
     workEnd: '18:00',
+    annualLeaveQuota: 15,
   },
   {
     id: 'stf-003',
@@ -190,6 +208,7 @@ export const STAFF: Staff[] = [
     availableDays: [0, 1, 2, 3, 4, 5],
     workStart: '08:00',
     workEnd: '16:00',
+    annualLeaveQuota: 12,
   },
   {
     id: 'stf-004',
@@ -199,6 +218,7 @@ export const STAFF: Staff[] = [
     availableDays: [0, 1, 2, 3, 4],
     workStart: '08:30',
     workEnd: '16:30',
+    annualLeaveQuota: 12,
   },
 ];
 
@@ -602,6 +622,54 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
   TECHNICIAN: 'تکنسین',
   RECEPTIONIST: 'پذیرش',
 };
+
+export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
+  SICK: 'استعلاجی',
+  ANNUAL: 'سالانه',
+  UNPAID: 'بدون حقوق',
+};
+
+export const LEAVE_STATUS_LABELS: Record<LeaveStatus, { label: string; color: string }> = {
+  PENDING: { label: 'در انتظار', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  APPROVED: { label: 'تایید شده', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  REJECTED: { label: 'رد شده', color: 'bg-red-50 text-red-700 border-red-200' },
+};
+
+export const STAFF_LEAVES: StaffLeave[] = [
+  {
+    id: 'leave-001',
+    staffId: 'staff-001',
+    staffName: 'دکتر سارا احمدی',
+    startDate: '1405/02/10',
+    endDate: '1405/02/12',
+    type: 'SICK',
+    status: 'APPROVED',
+    description: 'سرماخوردگی',
+    requestedAt: '1405/02/09',
+  },
+  {
+    id: 'leave-002',
+    staffId: 'staff-002',
+    staffName: 'مریم کریمی',
+    startDate: '1405/02/15',
+    endDate: '1405/02/20',
+    type: 'ANNUAL',
+    status: 'PENDING',
+    description: 'استفاده از مرخصی سالانه',
+    requestedAt: '1405/02/08',
+  },
+  {
+    id: 'leave-003',
+    staffId: 'staff-003',
+    staffName: 'علی رضایی',
+    startDate: '1405/02/05',
+    endDate: '1405/02/06',
+    type: 'SICK',
+    status: 'APPROVED',
+    description: 'آنفولانزا',
+    requestedAt: '1405/02/04',
+  },
+];
 
 // Clinic info
 export const CLINIC_INFO = {
