@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, Filter, Download, Eye, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { BOOKINGS, type BookingStatus } from '../../data/mockData';
+import { Search, Filter, Download, Eye, ChevronLeft, ChevronRight, X, Plus, Calendar, Clock, User } from 'lucide-react';
+import { BOOKINGS, SERVICES, STAFF, type BookingStatus } from '../../data/mockData';
 import { StatusChip } from '../../components/clinic/StatusChip';
-import { toPersian, formatPrice } from '../../utils/persian';
+import { toPersian, formatPrice, formatTime } from '../../utils/persian';
+import { JalaliCalendarPicker } from '../../components/clinic/JalaliCalendarPicker';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 const STATUS_FILTERS: { value: BookingStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'همه' },
@@ -19,6 +37,18 @@ export default function BookingsList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'ALL'>('ALL');
   const [showFilters, setShowFilters] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedJalaliDate, setSelectedJalaliDate] = useState<{
+    jy: number; jm: number; jd: number; date: Date
+  } | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ hour: number; minute: number } | null>(null);
+  const [newBooking, setNewBooking] = useState({
+    patientName: '',
+    patientPhone: '',
+    serviceId: '',
+    staffId: '',
+    notes: '',
+  });
 
   const filtered = BOOKINGS.filter(b => {
     const matchesSearch =
@@ -30,6 +60,51 @@ export default function BookingsList() {
     return matchesSearch && matchesStatus;
   });
 
+  const generateTimeSlots = () => {
+    const slots: { hour: number; minute: number; available: boolean }[] = [];
+    const unavailable = [9, 10, 13, 14, 16];
+    for (let h = 8; h < 20; h++) {
+      for (const m of [0, 30]) {
+        slots.push({
+          hour: h,
+          minute: m,
+          available: !unavailable.includes(h) || m === 30,
+        });
+      }
+    }
+    return slots;
+  };
+
+  const handleCreateBooking = () => {
+    if (!newBooking.patientName || !newBooking.patientPhone || !newBooking.serviceId || !newBooking.staffId || !selectedJalaliDate || !selectedTimeSlot) return;
+    
+    const selectedService = SERVICES.find(s => s.id === newBooking.serviceId);
+    const selectedStaff = STAFF.find(s => s.id === newBooking.staffId);
+    
+    const bookingNumber = `BK${Date.now().toString().slice(-6)}`;
+    const timeStr = `${toPersian(selectedTimeSlot.hour)}:${selectedTimeSlot.minute === 0 ? '00' : '30'}`;
+    const dateTime = selectedJalaliDate.date.toISOString().replace('T00:00:00.000Z', `T${selectedTimeSlot.hour.toString().padStart(2, '0')}:${selectedTimeSlot.minute}:00.000Z`);
+    
+    console.log('Creating booking:', {
+      id: `bk-${Date.now()}`,
+      bookingNumber,
+      patientName: newBooking.patientName,
+      patientPhone: newBooking.patientPhone,
+      services: selectedService ? [selectedService] : [],
+      staffId: newBooking.staffId,
+      staffName: selectedStaff?.name || '',
+      dateTime,
+      totalAmount: selectedService?.price || 0,
+      status: 'CONFIRMED' as BookingStatus,
+      notes: newBooking.notes,
+    });
+    
+    setCreateModalOpen(false);
+    setNewBooking({ patientName: '', patientPhone: '', serviceId: '', staffId: '', notes: '' });
+    setSelectedJalaliDate(null);
+    setSelectedTimeSlot(null);
+  };
+
   return (
     <div className="p-6" dir="rtl">
       {/* Header */}
@@ -40,10 +115,19 @@ export default function BookingsList() {
             {toPersian(filtered.length)} رزرو یافت شد
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 shadow-sm">
-          <Download size={15} />
-          خروجی Excel
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-teal-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-teal-700 shadow-sm"
+          >
+            <Plus size={15} />
+            رزرو جدید
+          </button>
+          <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 shadow-sm">
+            <Download size={15} />
+            خروجی Excel
+          </button>
+        </div>
       </div>
 
       {/* Search & filter bar */}
@@ -203,6 +287,143 @@ export default function BookingsList() {
           </div>
         </div>
       </div>
+
+      {/* Create Booking Modal */}
+      <Dialog open={createModalOpen} onOpenChange={(o) => !o && setCreateModalOpen(false)}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar size={20} className="text-teal-600" />
+              رزرو جدید
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>نام زیباجو</Label>
+                <Input
+                  value={newBooking.patientName}
+                  onChange={(e) => setNewBooking({ ...newBooking, patientName: e.target.value })}
+                  placeholder="نام کامل"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>شماره تماس</Label>
+                <Input
+                  value={newBooking.patientPhone}
+                  onChange={(e) => setNewBooking({ ...newBooking, patientPhone: e.target.value })}
+                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>خدمات</Label>
+              <Select value={newBooking.serviceId} onValueChange={(v) => setNewBooking({ ...newBooking, serviceId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب خدمات" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICES.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} - {formatPrice(s.price)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>پزشک/تکنسین</Label>
+              <Select value={newBooking.staffId} onValueChange={(v) => setNewBooking({ ...newBooking, staffId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب پزشک" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STAFF.filter(s => s.role === 'DOCTOR' || s.role === 'TECHNICIAN').map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>تاریخ</Label>
+                <JalaliCalendarPicker
+                  selectedDate={selectedJalaliDate}
+                  onSelect={(date) => {
+                    setSelectedJalaliDate(date);
+                    setSelectedTimeSlot(null);
+                  }}
+                  closedDays={[6]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>ساعت</Label>
+                {selectedJalaliDate ? (
+                  <div className="bg-white border border-slate-200 rounded-xl p-3 max-h-[369px] overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-2">
+                      {generateTimeSlots().map((slot, i) => {
+                        const isSelected = selectedTimeSlot?.hour === slot.hour && selectedTimeSlot?.minute === slot.minute;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={!slot.available}
+                            onClick={() => slot.available && setSelectedTimeSlot(slot)}
+                            className={`
+                              py-2 px-1 rounded-lg text-sm font-medium transition-all
+                              ${isSelected
+                                ? 'bg-teal-600 text-white'
+                                : slot.available
+                                ? 'bg-slate-50 border border-slate-200 text-slate-700 hover:border-teal-300 hover:text-teal-700'
+                                : 'bg-slate-50 text-slate-300 cursor-not-allowed line-through'
+                              }
+                            `}
+                          >
+                            {formatTime(slot.hour, slot.minute)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-400 bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                    ابتدا تاریخ را انتخاب کنید
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>یادداشت (اختیاری)</Label>
+              <Input
+                value={newBooking.notes}
+                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                placeholder="توضیحات اضافی..."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
+              انصراف
+            </Button>
+            <Button
+              onClick={handleCreateBooking}
+              disabled={!newBooking.patientName || !newBooking.patientPhone || !newBooking.serviceId || !newBooking.staffId || !selectedJalaliDate || !selectedTimeSlot}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              ایجاد رزرو
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

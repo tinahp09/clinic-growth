@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Calendar, CreditCard, TrendingUp, TrendingDown, Users,
   AlertCircle, BookOpen, RefreshCw, CheckCircle, XCircle,
@@ -17,8 +17,24 @@ import {
 } from '../../data/mockData';
 import { toPersian, formatPrice } from '../../utils/persian';
 import { useNavigate } from 'react-router';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 const CHART_COLORS = ['#0D9488', '#6366F1', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+type TimeFilter = 'this_month' | '3_months' | '6_months' | '1_year';
+
+const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
+  this_month: 'این ماه',
+  '3_months': '۳ ماه گذشته',
+  '6_months': '۶ ماه گذشته',
+  '1_year': '۱ سال گذشته',
+};
 
 const PersianTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -38,6 +54,7 @@ const PersianTooltip = ({ active, payload, label }: any) => {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('this_month');
   const today = new Date().toLocaleDateString('fa-IR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
@@ -51,17 +68,18 @@ export default function AdminDashboard() {
           <p className="text-sm text-slate-500 mt-0.5">{today}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 shadow-sm">
-            <Calendar size={15} />
-            این ماه
-          </button>
-          <button
-            onClick={() => navigate('/client')}
-            className="flex items-center gap-2 bg-teal-600 text-white rounded-xl px-4 py-2.5 text-sm shadow-md shadow-teal-200 hover:bg-teal-700"
-          >
-            نمای کلاینت
-            <ArrowLeft size={15} />
-          </button>
+          <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+            <SelectTrigger className="w-[160px] bg-white">
+              <SelectValue placeholder="انتخاب بازه زمانی" />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.entries(TIME_FILTER_LABELS) as [TimeFilter, string][]).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

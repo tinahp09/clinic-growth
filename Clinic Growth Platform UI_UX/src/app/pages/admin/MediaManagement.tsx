@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Search, Filter, Image, Eye, Globe, GlobeLock,
   Shield, CheckCircle, XCircle, AlertTriangle, X,
-  ChevronRight, ChevronLeft, Check, Sparkles, Plus, Upload, User, Calendar,
+  ChevronRight, ChevronLeft, Check, Sparkles, Plus, Upload, User, Calendar, ChevronDown,
 } from 'lucide-react';
 import { MEDIA_ITEMS, SERVICES, BOOKINGS, type MediaItem } from '../../data/mockData';
 import { toPersian } from '../../utils/persian';
@@ -93,29 +93,31 @@ function ImageModal({
         <div className="relative bg-slate-100 aspect-[16/10]">
           <div className="relative w-full h-full">
             {beforeItem && (
-              <div className="absolute inset-0 overflow-hidden" style={{ clipPath: 'inset(0 50% 0 0)' }}>
+              <div className="absolute inset-0">
                 <img
                   src={beforeItem.url}
                   alt="قبل"
-                  className="w-full h-full object-cover"
+                  className="absolute left-0 top-0 w-1/2 h-full object-cover"
                 />
               </div>
             )}
-            <div className="absolute inset-0 overflow-hidden" style={{ clipPath: 'inset(0 0 0 50%)' }}>
+            <div className="absolute inset-0">
               <img
                 src={item.url}
                 alt="بعد"
-                className="w-full h-full object-cover"
+                className="absolute right-0 top-0 w-1/2 h-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute right-1/2 top-0 bottom-0 w-0.5 bg-white shadow-lg z-10" />
-              <div className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-10 h-10 bg-white rounded-full shadow-lg z-20 flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-slate-600">
-                  <path d="M4 7H10M4 7L6 5M4 7L6 9M10 7L8 5M10 7L8 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+            {(beforeItem && item.type === 'AFTER') && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute right-1/2 top-0 bottom-0 w-0.5 bg-white shadow-lg z-10" />
+                <div className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-10 h-10 bg-white rounded-full shadow-lg z-20 flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-slate-600">
+                    <path d="M4 7H10M4 7L6 5M4 7L6 9M10 7L8 5M10 7L8 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
               </div>
-            </div>
+            )}
             {beforeItem && (
               <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-xl text-sm font-bold bg-white/90 text-amber-700">
                 قبل
@@ -256,35 +258,51 @@ function UploadModal({
   onClose: () => void;
   onUpload: (data: UploadData) => void;
 }) {
-  const [type, setType] = useState<'BEFORE' | 'AFTER' | 'PROGRESS'>('BEFORE');
   const [serviceId, setServiceId] = useState('');
   const [bookingId, setBookingId] = useState('');
   const [patientName, setPatientName] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [beforeImageUrl, setBeforeImageUrl] = useState('');
+  const [afterImageUrl, setAfterImageUrl] = useState('');
   const [consentGiven, setConsentGiven] = useState(false);
   const [publicConsentGiven, setPublicConsentGiven] = useState(false);
   const [isAnonymized, setIsAnonymized] = useState(false);
   const [visibleToClient, setVisibleToClient] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const beforeFileInputRef = useRef<HTMLInputElement>(null);
+  const afterFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = () => {
-    if (!serviceId || !bookingId || !patientName || !imageUrl) return;
-    onUpload({
-      type,
-      serviceId,
-      bookingId,
-      patientName,
-      imageUrl,
-      consentGiven,
-      publicConsentGiven,
-      isAnonymized,
-      visibleToClient,
-    });
-    setType('BEFORE');
+    if (!serviceId || !bookingId || !patientName) return;
+    if (beforeImageUrl) {
+      onUpload({
+        type: 'BEFORE',
+        serviceId,
+        bookingId,
+        patientName,
+        imageUrl: beforeImageUrl,
+        consentGiven,
+        publicConsentGiven,
+        isAnonymized,
+        visibleToClient,
+      });
+    }
+    if (afterImageUrl) {
+      onUpload({
+        type: 'AFTER',
+        serviceId,
+        bookingId,
+        patientName,
+        imageUrl: afterImageUrl,
+        consentGiven,
+        publicConsentGiven,
+        isAnonymized,
+        visibleToClient,
+      });
+    }
     setServiceId('');
     setBookingId('');
     setPatientName('');
-    setImageUrl('');
+    setBeforeImageUrl('');
+    setAfterImageUrl('');
     setConsentGiven(false);
     setPublicConsentGiven(false);
     setIsAnonymized(false);
@@ -292,47 +310,35 @@ function UploadModal({
     onClose();
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (setUrl: (url: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result as string);
+        setUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const selectedService = SERVICES.find((s) => s.id === serviceId);
+  const hasAtLeastOneImage = beforeImageUrl || afterImageUrl;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md" dir="rtl">
+      <DialogContent className="max-w-lg" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 mt-5">
             <Upload size={20} className="text-teal-600" />
-            آپلود تصویر جدید
+            آپلود تصویر قبل و بعد
           </DialogTitle>
           <DialogDescription>
-            تصویر قبل یا بعد از درمان را آپلود کنید
+            تصویر قبل و بعد از درمان را آپلود کنید
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>نوع تصویر</Label>
-              <Select value={type} onValueChange={(v) => setType(v as any)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="BEFORE">قبل از درمان</SelectItem>
-                  <SelectItem value="AFTER">بعد از درمان</SelectItem>
-                  <SelectItem value="PROGRESS">پیشرفت درمان</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2">
               <Label>خدمات</Label>
               <Select value={serviceId} onValueChange={setServiceId}>
@@ -348,22 +354,21 @@ function UploadModal({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>شماره رزرو</Label>
-            <Select value={bookingId} onValueChange={setBookingId}>
-              <SelectTrigger>
-                <SelectValue placeholder="انتخاب رزرو" />
-              </SelectTrigger>
-              <SelectContent>
-                {BOOKINGS.filter((b) => b.status === 'CONFIRMED').map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.bookingNumber} - {b.patientName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label>شماره رزرو</Label>
+              <Select value={bookingId} onValueChange={setBookingId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخا�� رزرو" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BOOKINGS.filter((b) => b.status === 'CONFIRMED').map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.bookingNumber} - {b.patientName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -375,48 +380,89 @@ function UploadModal({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>تصویر</Label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-colors"
-            >
-              {imageUrl ? (
-                <div className="relative">
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setImageUrl('');
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <Upload size={24} className="text-slate-400" />
-                  <p className="text-sm text-slate-500">
-                    برای آپلود کلیک کنید
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    فرمت‌های مجاز: JPG, PNG
-                  </p>
-                </div>
-              )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                تصویر قبل
+              </Label>
+              <div
+                onClick={() => beforeFileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-colors min-h-[120px] flex flex-col items-center justify-center"
+              >
+                {beforeImageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={beforeImageUrl}
+                      alt="قبل"
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBeforeImageUrl('');
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <Upload size={20} className="text-slate-400" />
+                    <p className="text-xs text-slate-500">قبل از درمان</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={beforeFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect(setBeforeImageUrl)}
+                className="hidden"
+              />
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                تصویر بعد
+              </Label>
+              <div
+                onClick={() => afterFileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-colors min-h-[120px] flex flex-col items-center justify-center"
+              >
+                {afterImageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={afterImageUrl}
+                      alt="بعد"
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAfterImageUrl('');
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <Upload size={20} className="text-slate-400" />
+                    <p className="text-xs text-slate-500">بعد از درمان</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={afterFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect(setAfterImageUrl)}
+                className="hidden"
+              />
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -476,7 +522,7 @@ function UploadModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!serviceId || !bookingId || !patientName || !imageUrl}
+            disabled={!serviceId || !bookingId || !patientName || (!beforeImageUrl && !afterImageUrl)}
             className="bg-teal-600 hover:bg-teal-700"
           >
             <Check size={15} />
@@ -506,7 +552,7 @@ export default function MediaManagement() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [serviceFilter, setServiceFilter] = useState<string>('ALL');
   const [selected, setSelected] = useState<MediaItem | null>(null);
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>(MEDIA_ITEMS);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const filtered = mediaItems.filter((item) => {
@@ -563,13 +609,13 @@ export default function MediaManagement() {
     setMediaItems((prev) => [newItem, ...prev]);
   };
 
-  const getPairs = () => {
+  const getPairs = (items: MediaItem[]) => {
     const pairs: { before?: MediaItem; after?: MediaItem; serviceName: string }[] = [];
     const used = new Set<string>();
 
-    const services = [...new Set(mediaItems.map((m) => m.serviceId))];
+    const services = [...new Set(items.map((m) => m.serviceId))];
     services.forEach((serviceId) => {
-      const serviceItems = mediaItems.filter((m) => m.serviceId === serviceId);
+      const serviceItems = items.filter((m) => m.serviceId === serviceId);
       const serviceName = serviceItems[0]?.serviceName || '';
 
       const beforeItem = serviceItems.find((m) => m.type === 'BEFORE');
@@ -585,7 +631,7 @@ export default function MediaManagement() {
       }
     });
 
-    mediaItems.forEach((item) => {
+    items.forEach((item) => {
       if (!used.has(item.id)) {
         pairs.push({
           [item.type === 'BEFORE' ? 'before' : 'after']: item,
@@ -597,13 +643,13 @@ export default function MediaManagement() {
     return pairs;
   };
 
-  const pairs = getPairs();
+  const pairs = getPairs(filtered);
 
   const stats = {
-    total: mediaItems.length,
-    private: mediaItems.filter((m) => !m.isPublic).length,
-    public: mediaItems.filter((m) => m.isPublic).length,
-    pending: mediaItems.filter(
+    total: filtered.length,
+    private: filtered.filter((m) => !m.isPublic).length,
+    public: filtered.filter((m) => m.isPublic).length,
+    pending: filtered.filter(
       (m) => !m.isPublic && (m.publicConsentGiven || m.isAnonymized)
     ).length,
   };
@@ -642,7 +688,7 @@ export default function MediaManagement() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-5">
         <div className="flex gap-3 mb-3">
-          <div className="flex-1 relative">
+          <div className="relative w-[50%]">
             <Search
               size={16}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -662,55 +708,27 @@ export default function MediaManagement() {
                 <X size={14} />
               </button>
             )}
+            
+          </div>
+          <div className="relative w-[50%]">
+
+          <Select value={serviceFilter} onValueChange={setServiceFilter} dir='rtl'>
+            <SelectTrigger className="w-[180px] bg-white">
+              <SelectValue placeholder="همه خدمات" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه خدمات</SelectItem>
+              {SERVICES.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <select
-            value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            <option value="ALL">همه خدمات</option>
-            {SERVICES.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex gap-1">
-            {(['ALL', 'BEFORE', 'AFTER', 'PROGRESS'] as FilterType[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setTypeFilter(f)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  typeFilter === f
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {FILTER_LABELS[f]}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-1">
-            {(['ALL', 'PRIVATE', 'PUBLIC_PENDING', 'PUBLIC'] as StatusFilter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  statusFilter === f
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {STATUS_FILTER_LABELS[f]}
-              </button>
-            ))}
-          </div>
-        </div>
+       
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -726,35 +744,52 @@ export default function MediaManagement() {
             <div
               key={idx}
               className="relative bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm cursor-pointer group hover:shadow-md transition-shadow aspect-[4/3]"
-              onClick={() => pair.after && setSelected(pair.after)}
+              onClick={() => (pair.after || pair.before) && setSelected(pair.after || pair.before!)}
             >
               <div className="relative w-full h-full">
                 {pair.before && (
-                  <div className="absolute inset-0 overflow-hidden" style={{ clipPath: 'inset(0 50% 0 0)' }}>
+                  <div className="absolute inset-0">
                     <img
                       src={pair.before.url}
                       alt="قبل"
-                      className="w-full h-full object-cover"
+                      className="absolute left-0 top-0 w-1/2 h-full object-cover"
                     />
                   </div>
                 )}
                 {pair.after && (
-                  <div className="absolute inset-0 overflow-hidden" style={{ clipPath: 'inset(0 0 0 50%)' }}>
+                  <div className="absolute inset-0">
                     <img
                       src={pair.after.url}
                       alt="بعد"
-                      className="w-full h-full object-cover"
+                      className="absolute right-0 top-0 w-1/2 h-full object-cover"
                     />
                   </div>
                 )}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="absolute right-1/2 top-0 bottom-0 w-0.5 bg-white shadow-lg z-10" />
-                  <div className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-lg z-20 flex items-center justify-center">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-slate-500">
-                      <path d="M2.5 5H7.5M7.5 5L5.5 3M7.5 5L5.5 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                {!pair.before && pair.after && (
+                  <img
+                    src={pair.after.url}
+                    alt="بعد"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                {!pair.after && pair.before && (
+                  <img
+                    src={pair.before.url}
+                    alt="قبل"
+                    className="w-full h-full object-cover"
+                    style={{ clipPath: 'inset(0 0 0 50%)' }}
+                  />
+                )}
+                {(pair.before && pair.after) && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute right-1/2 top-0 bottom-0 w-0.5 bg-white shadow-lg z-10" />
+                    <div className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-lg z-20 flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-slate-500">
+                        <path d="M2.5 5H7.5M7.5 5L5.5 3M7.5 5L5.5 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
                 {pair.before && (
                   <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md text-xs font-bold bg-white/90 text-amber-700">
