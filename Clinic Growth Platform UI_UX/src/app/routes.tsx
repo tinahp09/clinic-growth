@@ -13,6 +13,7 @@ import PaymentPage from './pages/client/PaymentPage';
 import BookingConfirmation from './pages/client/BookingConfirmation';
 import MyAppointments from './pages/client/MyAppointments';
 import MediaVault from './pages/client/MediaVault';
+import Gallery from './pages/client/Gallery';
 
 // Admin pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
     Component: AdminLogin,
   },
   {
+    path: '/gallery',
+    Component: Gallery,
+  },
+  {
     path: '/client',
     Component: ClientLayout,
     children: [
@@ -89,6 +94,7 @@ export const router = createBrowserRouter([
       { path: 'settings', Component: TenantSettings },
       { path: 'observability', Component: Observability },
       { path: 'media', Component: MediaManagement },
+      { path: 'gallery', Component: Gallery },
     ],
   },
 ]);

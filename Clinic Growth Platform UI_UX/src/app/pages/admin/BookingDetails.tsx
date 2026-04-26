@@ -143,7 +143,7 @@ export default function BookingDetails() {
         <div className="space-y-4">
           {/* Patient info */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h3 className="font-semibold text-slate-800 mb-3">اطلاعات بیمار</h3>
+            <h3 className="font-semibold text-slate-800 mb-3">اطلاعات زیباجو</h3>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
                 <User size={16} className="text-teal-700" />

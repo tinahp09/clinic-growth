@@ -55,7 +55,7 @@ export default function BookingsList() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="جستجو نام بیمار، شماره رزرو، تلفن..."
+              placeholder="جستجو نام زیباجو، شماره رزرو، تلفن..."
               className="w-full border border-slate-200 rounded-xl pr-9 pl-3 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
             {search && (
@@ -110,7 +110,7 @@ export default function BookingsList() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">شماره رزرو</th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">بیمار</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">زیباجو</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">خدمات</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">پزشک</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">تاریخ</th>

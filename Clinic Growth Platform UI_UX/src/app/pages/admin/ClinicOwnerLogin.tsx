@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Eye, EyeOff, Lock, Loader2, Shield, User, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Lock, Loader2, Shield, User, ArrowLeft, QrCode } from 'lucide-react';
 import { CLINIC_INFO } from '../../data/mockData';
+
+function generateQRCode(text: string): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(text)}`;
+}
 
 export default function ClinicOwnerLogin() {
   const navigate = useNavigate();
@@ -9,7 +13,9 @@ export default function ClinicOwnerLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [showRepeatPassword, setShowRepeatPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [scanComplete, setScanComplete] = useState(false);
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +24,22 @@ export default function ClinicOwnerLogin() {
   const [ownerUsername, setOwnerUsername] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [ownerRepeatPassword, setOwnerRepeatPassword] = useState('');
+
+  const clinicUrl = typeof window !== 'undefined' ? `${window.location.origin}/client` : 'http://localhost:5173/client';
+  const qrCodeUrl = generateQRCode(clinicUrl);
+
+  useEffect(() => {
+    if (showQRModal && !scanComplete) {
+      const timer = setTimeout(() => {
+        setScanComplete(true);
+        setTimeout(() => {
+          setShowQRModal(false);
+          setScanComplete(false);
+        }, 1500);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showQRModal, scanComplete]);
 
   const handleClinicOwnerLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +50,7 @@ export default function ClinicOwnerLogin() {
       if (username === 'admin' && password === 'admin123') {
         navigate('/admin/dashboard');
       } else {
-        setError('نام کاربری یا رمز عبور اشتباه است');
+        setError(true);
       }
     }, 1000);
   };
@@ -37,19 +59,19 @@ export default function ClinicOwnerLogin() {
     e.preventDefault();
     setError('');
     if (!clinicName.trim()) {
-      setError('لطفا نام کلینیک را وارد کنید');
+      setError(true);
       return;
     }
     if (!ownerUsername.trim()) {
-      setError('لطفا نام کاربری را وارد کنید');
+      setError(true);
       return;
     }
     if (ownerPassword !== ownerRepeatPassword) {
-      setError('رمزهای عبور مطابقت ندارند');
+      setError(true);
       return;
     }
     if (ownerPassword.length < 4) {
-      setError('رمز عبور باید حداقل ۴ کاراکتر باشد');
+      setError(true);
       return;
     }
     setLoading(true);
@@ -63,11 +85,11 @@ export default function ClinicOwnerLogin() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-slate-100 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-sm">
         <button
-          onClick={() => navigate('/client-login')}
-          className="absolute top-4 left-4 p-2 text-slate-500 hover:text-slate-700 flex items-center gap-2"
+          onClick={() => setShowQRModal(true)}
+          className="absolute top-4 left-4 p-2 text-slate-500 hover:text-slate-700 flex items-center gap-2 bg-white rounded-full shadow-sm"
         >
-          <ArrowLeft size={18} className="rotate-180" />
-          <span className="text-sm">ورود بیمار</span>
+          <QrCode size={18} className="text-teal-600" />
+          <span className="text-sm text-teal-600">QR Code ورود زیباجو</span>
         </button>
 
         <div className="text-center mb-8">
@@ -89,7 +111,7 @@ export default function ClinicOwnerLogin() {
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full bg-red-200 flex items-center justify-center text-xs font-bold">!</span>
-                  {error}
+                  نام کاربری یا رمز عبور اشتباه است
                 </div>
               )}
 
@@ -156,7 +178,7 @@ export default function ClinicOwnerLogin() {
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full bg-red-200 flex items-center justify-center text-xs font-bold">!</span>
-                  {error}
+                  اطلاعات وارد شده نامعتبر است
                 </div>
               )}
 
@@ -272,6 +294,54 @@ export default function ClinicOwnerLogin() {
           ارتباط امن رمزنگاری شده
         </div>
       </div>
+
+      {showQRModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 bg-teal-50 rounded-full mx-auto flex items-center justify-center mb-4">
+                <QrCode size={24} className="text-teal-600" />
+              </div>
+              <h3 className="font-bold text-slate-800 text-lg mb-1">QR Code ورود زیباجو</h3>
+              <p className="text-sm text-slate-500 mb-4">
+                زیباجوان می‌توانند با اسکن این کد وارد پنل خود شوند
+              </p>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-4">
+                <img
+                  src={qrCodeUrl}
+                  alt="QR Code"
+                  className="w-44 h-44 mx-auto rounded-xl"
+                />
+              </div>
+              <p className="text-xs text-slate-400 mb-4">
+                آدرس: {clinicUrl}
+              </p>
+              {scanComplete ? (
+                <div className="flex items-center justify-center gap-2 text-emerald-600">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-medium">QR Code نمایش داده شد!</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
+                  <div className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                  آماده نمایش...
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setShowQRModal(false);
+                setScanComplete(false);
+              }}
+              className="w-full py-4 border-t border-slate-100 text-slate-500 hover:text-slate-700 font-medium"
+            >
+              بستن
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ const MOCK_REFUNDS: Refund[] = [
     patientName: 'علی رضوی',
     amount: 1_800_000,
     status: 'REQUESTED',
-    reason: 'لغو توسط بیمار',
+    reason: 'لغو توسط زیباجو',
     requestedAt: '2025-05-10T14:30:00Z',
   },
   {

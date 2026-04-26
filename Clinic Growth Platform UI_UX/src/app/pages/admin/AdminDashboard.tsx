@@ -283,7 +283,7 @@ export default function AdminDashboard() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-50">
-                <th className="text-right text-xs font-medium text-slate-400 px-5 py-3">بیمار</th>
+                <th className="text-right text-xs font-medium text-slate-400 px-5 py-3">زیباجو</th>
                 <th className="text-right text-xs font-medium text-slate-400 px-5 py-3">خدمات</th>
                 <th className="text-right text-xs font-medium text-slate-400 px-5 py-3">تاریخ</th>
                 <th className="text-right text-xs font-medium text-slate-400 px-5 py-3">مبلغ</th>

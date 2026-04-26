@@ -64,7 +64,7 @@ export default function Payments() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="جستجو نام بیمار یا شماره رزرو..."
+              placeholder="جستجو نام زیباجو یا شماره رزرو..."
               className="w-full border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -91,7 +91,7 @@ export default function Payments() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">شماره تراکنش</th>
-                <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">بیمار</th>
+                <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">زیباجو</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">شماره رزرو</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">مبلغ</th>
                 <th className="text-right text-xs font-semibold text-slate-500 px-5 py-3.5">Authority</th>

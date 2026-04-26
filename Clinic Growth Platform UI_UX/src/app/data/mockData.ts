@@ -275,7 +275,7 @@ export const BOOKINGS: Booking[] = [
     dateTime: '2025-05-09T09:00:00Z',
     status: 'CANCELLED',
     totalAmount: 2_550_000,
-    cancelReason: 'درخواست بیمار',
+    cancelReason: 'درخواست زیباجو',
     createdAt: '2025-05-07T16:40:00Z',
   },
   {
@@ -389,7 +389,7 @@ export const REFUNDS: Refund[] = [
     patientName: 'نرگس کریمی',
     amount: 2_550_000,
     status: 'COMPLETED',
-    reason: 'لغو توسط بیمار - بیش از ۲۴ ساعت قبل',
+    reason: 'لغو توسط زیباجو - بیش از ۲۴ ساعت قبل',
     requestedAt: '2025-05-09T08:00:00Z',
     processedAt: '2025-05-09T10:30:00Z',
     refundRef: 'REF-001122',
@@ -437,52 +437,134 @@ export const SERVICE_DISTRIBUTION = [
   { name: 'سایر', value: 17 },
 ];
 
-// === MEDIA VAULT ===
+// === MEDIA VAULT (v2) ===
 export interface MediaItem {
   id: string;
   bookingId: string;
+  patientId: string;
   patientName: string;
   serviceId: string;
   serviceName: string;
   type: 'BEFORE' | 'AFTER' | 'PROGRESS';
   url: string;
+  thumbnailUrl?: string;
   uploadedAt: string;
+  uploadedByStaffId: string;
   consentGiven: boolean;
+  isPublic: boolean;
+  publicConsentGiven: boolean;
+  publicConsentAt?: string;
+  isAnonymized: boolean;
+  notes?: string;
+  visibleToClient: boolean;
 }
 
 export const MEDIA_ITEMS: MediaItem[] = [
   {
     id: 'med-001',
     bookingId: 'bk-001',
+    patientId: 'pat-001',
     patientName: 'فاطمه حسینی',
     serviceId: 'svc-001',
     serviceName: 'مزوتراپی پوست',
     type: 'BEFORE',
     url: 'https://images.unsplash.com/photo-1707544738444-acd9233e646e?w=400',
     uploadedAt: '2025-05-10T10:05:00Z',
+    uploadedByStaffId: 'stf-001',
     consentGiven: true,
+    isPublic: true,
+    publicConsentGiven: true,
+    publicConsentAt: '2025-05-10T12:00:00Z',
+    isAnonymized: true,
+    visibleToClient: true,
   },
   {
     id: 'med-002',
     bookingId: 'bk-001',
+    patientId: 'pat-001',
     patientName: 'فاطمه حسینی',
     serviceId: 'svc-001',
     serviceName: 'مزوتراپی پوست',
     type: 'AFTER',
     url: 'https://images.unsplash.com/photo-1761718210055-e83ca7e2c9ad?w=400',
     uploadedAt: '2025-05-10T11:15:00Z',
+    uploadedByStaffId: 'stf-001',
     consentGiven: true,
+    isPublic: true,
+    publicConsentGiven: true,
+    publicConsentAt: '2025-05-10T12:00:00Z',
+    isAnonymized: true,
+    visibleToClient: true,
   },
   {
     id: 'med-003',
     bookingId: 'bk-006',
+    patientId: 'pat-002',
     patientName: 'رضا قاسمی',
     serviceId: 'svc-008',
     serviceName: 'پیلینگ شیمیایی',
     type: 'BEFORE',
     url: 'https://images.unsplash.com/photo-1551601651-09492b5468b6?w=400',
     uploadedAt: '2025-05-08T11:05:00Z',
+    uploadedByStaffId: 'stf-001',
     consentGiven: true,
+    isPublic: false,
+    publicConsentGiven: false,
+    isAnonymized: false,
+    visibleToClient: true,
+  },
+  {
+    id: 'med-004',
+    bookingId: 'bk-006',
+    patientId: 'pat-002',
+    patientName: 'رضا قاسمی',
+    serviceId: 'svc-008',
+    serviceName: 'پیلینگ شیمیایی',
+    type: 'AFTER',
+    url: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b6?w=400',
+    uploadedAt: '2025-05-08T12:30:00Z',
+    uploadedByStaffId: 'stf-001',
+    consentGiven: true,
+    isPublic: false,
+    publicConsentGiven: false,
+    isAnonymized: false,
+    visibleToClient: true,
+  },
+  {
+    id: 'med-005',
+    bookingId: 'bk-005',
+    patientId: 'pat-003',
+    patientName: 'شیرین تهرانی',
+    serviceId: 'svc-003',
+    serviceName: 'تزریق بوتاکس',
+    type: 'BEFORE',
+    url: 'https://images.unsplash.com/photo-1512290923901-3a592a77b1c2?w=400',
+    uploadedAt: '2025-05-12T15:10:00Z',
+    uploadedByStaffId: 'stf-002',
+    consentGiven: true,
+    isPublic: true,
+    publicConsentGiven: true,
+    publicConsentAt: '2025-05-12T16:00:00Z',
+    isAnonymized: true,
+    visibleToClient: true,
+  },
+  {
+    id: 'med-006',
+    bookingId: 'bk-005',
+    patientId: 'pat-003',
+    patientName: 'شیرین تهرانی',
+    serviceId: 'svc-003',
+    serviceName: 'تزریق بوتاکس',
+    type: 'AFTER',
+    url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400',
+    uploadedAt: '2025-05-12T16:15:00Z',
+    uploadedByStaffId: 'stf-002',
+    consentGiven: true,
+    isPublic: true,
+    publicConsentGiven: true,
+    publicConsentAt: '2025-05-12T16:00:00Z',
+    isAnonymized: true,
+    visibleToClient: true,
   },
 ];
 

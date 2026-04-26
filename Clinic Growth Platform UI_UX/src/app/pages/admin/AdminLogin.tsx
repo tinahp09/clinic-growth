@@ -128,7 +128,7 @@ export default function AdminLogin() {
             <TabsList className="w-full mb-6">
               <TabsTrigger value="client" className="flex-1">
                 <Smartphone size={16} className="ml-2" />
-                بیمار
+                زیباجو
               </TabsTrigger>
               <TabsTrigger value="owner" className="flex-1">
                 <User size={16} className="ml-2" />
@@ -139,7 +139,7 @@ export default function AdminLogin() {
             <TabsContent value="client">
               {!isRegisterMode ? (
                 <>
-                  <h2 className="font-bold text-slate-800 mb-1 text-right">ورود بیمار</h2>
+                  <h2 className="font-bold text-slate-800 mb-1 text-right">ورود زیباجو</h2>
                   <p className="text-sm text-slate-500 mb-4 text-right">با شماره موبایل و کد تایید وارد شوید</p>
 
                   {error && (
@@ -241,7 +241,7 @@ export default function AdminLogin() {
                 </>
               ) : (
                 <>
-                  <h2 className="font-bold text-slate-800 mb-1 text-right">ثبت نام بیمار</h2>
+                  <h2 className="font-bold text-slate-800 mb-1 text-right">ثبت نام زیباجو</h2>
                   <p className="text-sm text-slate-500 mb-4 text-right">مشخصات خود را وارد کنید</p>
 
                   {error && (
@@ -559,7 +559,7 @@ export default function AdminLogin() {
 
         <div className="mt-4 bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center">
           <p className="text-xs text-amber-700 font-medium mb-1">اطلاعات دموی ورود</p>
-          <p className="text-xs text-amber-600">بیمار: شماره موبایل + کد 123456</p>
+          <p className="text-xs text-amber-600">زیباجو: شماره موبایل + کد 123456</p>
           <p className="text-xs text-amber-600">مدیر: admin / admin123</p>
         </div>
 

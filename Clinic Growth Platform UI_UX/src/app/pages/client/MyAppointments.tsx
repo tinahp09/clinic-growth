@@ -173,7 +173,7 @@ export default function MyAppointments() {
   const handleCancelConfirm = () => {
     if (!cancelTarget) return;
     setBookings(prev => prev.map(b =>
-      b.id === cancelTarget.id ? { ...b, status: 'CANCELLED' as const, cancelReason: 'درخواست بیمار' } : b
+      b.id === cancelTarget.id ? { ...b, status: 'CANCELLED' as const, cancelReason: 'درخواست زیباجو' } : b
     ));
     setCancelTarget(null);
   };

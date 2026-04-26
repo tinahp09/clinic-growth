@@ -176,7 +176,7 @@ export default function LandingPage() {
 
       {/* Testimonials */}
       <div className="px-4 py-5">
-        <h2 className="font-semibold text-slate-800 mb-3">نظرات بیماران</h2>
+        <h2 className="font-semibold text-slate-800 mb-3">نظرات زیباجوان</h2>
         <div className="space-y-3">
           {[
             { name: 'فاطمه م.', text: 'بهترین کلینیک زیبایی که تا به حال رفتم. نتیجه مزوتراپی فوق‌العاده بود!', rating: 5 },

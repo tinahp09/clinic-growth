@@ -78,18 +78,18 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           {/* Client App */}
           <div
-            className="group cursor-pointer bg-gradient-to-br from-teal-800/40 to-teal-900/40 border border-teal-700/30 rounded-3xl p-6 hover:border-teal-500/50 transition-all hover:shadow-xl hover:shadow-teal-900/50"
-            onClick={() => navigate('/client')}
+            className="group cursor-pointer bg-gradient-to-br from-teal-800/40 to-teal-900/40 border border-teal-700/30 rounded-3xl p-6"
+            // onClick={() => navigate('/client')}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-teal-600/30 rounded-xl flex items-center justify-center">
                 <Smartphone size={18} className="text-teal-300" />
               </div>
               <div>
-                <h3 className="text-white font-semibold">اپلیکیشن بیمار</h3>
+                <h3 className="text-white font-semibold">اپلیکیشن زیباجو</h3>
                 <p className="text-teal-400 text-xs">موبایل-فرست، RTL</p>
               </div>
-              <ChevronLeft size={18} className="text-teal-400 mr-auto group-hover:-translate-x-1 transition-transform" />
+              {/* <ChevronLeft size={18} className="text-teal-400 mr-auto group-hover:-translate-x-1 transition-transform" /> */}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {[
@@ -109,8 +109,8 @@ export default function HomePage() {
 
           {/* Admin Panel */}
           <div
-            className="group cursor-pointer bg-gradient-to-br from-indigo-800/40 to-indigo-900/40 border border-indigo-700/30 rounded-3xl p-6 hover:border-indigo-500/50 transition-all hover:shadow-xl hover:shadow-indigo-900/50"
-            onClick={() => navigate('/admin/dashboard')}
+            className="group cursor-pointer bg-gradient-to-br from-indigo-800/40 to-indigo-900/40 border border-indigo-700/30 rounded-3xl p-6  transition-all "
+            // onClick={() => navigate('/admin/dashboard')}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-600/30 rounded-xl flex items-center justify-center">
@@ -120,7 +120,7 @@ export default function HomePage() {
                 <h3 className="text-white font-semibold">پنل مدیریت</h3>
                 <p className="text-indigo-400 text-xs">دسکتاپ-فرست، داشبورد کامل</p>
               </div>
-              <ChevronLeft size={18} className="text-indigo-400 mr-auto group-hover:-translate-x-1 transition-transform" />
+              {/* <ChevronLeft size={18} className="text-indigo-400 mr-auto group-hover:-translate-x-1 transition-transform" /> */}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {[

@@ -73,14 +73,14 @@ export default function ClientLogin() {
           </div>
           {/* <h1 className="text-xl font-bold text-slate-800">{CLINIC_INFO.name}</h1> */}
           <p className="text-sm text-slate-500 mt-1">
-            {isRegisterMode ? 'ثبت نام بیمار' : 'ورود بیمار'}
+            {isRegisterMode ? 'ثبت نام زیباجو' : 'ورود زیباجو'}
           </p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-7">
           {!isRegisterMode ? (
             <>
-              <h2 className="font-bold text-slate-800 mb-1 text-right">ورود بیمار</h2>
+              <h2 className="font-bold text-slate-800 mb-1 text-right">ورود زیباجو</h2>
               <p className="text-sm text-slate-500 mb-4 text-right">با شماره موبایل و کد تایید وارد شوید</p>
 
               {error && (
@@ -182,7 +182,7 @@ export default function ClientLogin() {
             </>
           ) : (
             <>
-              <h2 className="font-bold text-slate-800 mb-1 text-right">ثبت نام بیمار</h2>
+              <h2 className="font-bold text-slate-800 mb-1 text-right">ثبت نام زیباجو</h2>
               <p className="text-sm text-slate-500 mb-4 text-right">مشخصات خود را وارد کنید</p>
 
               {error && (
