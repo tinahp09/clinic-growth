@@ -201,15 +201,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Bottom CTA */}
-      <div className="sticky bottom-20 px-4 pb-4">
-        <button
-          onClick={() => navigate('/client/services')}
-          className="w-full bg-teal-600 text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-teal-200 flex items-center justify-center gap-2"
-        >
-          رزرو نوبت
-        </button>
-      </div>
+    
     </div>
   );
 }

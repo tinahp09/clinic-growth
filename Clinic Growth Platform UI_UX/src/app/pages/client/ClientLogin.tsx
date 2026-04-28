@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Smartphone, KeyRound, Loader2, Shield, ArrowLeft } from 'lucide-react';
+import { Smartphone, KeyRound, Loader2, Shield } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../../components/ui/input-otp';
-import { CLINIC_INFO } from '../../data/mockData';
+import { clientAuthApi } from '../../api/client-auth';
 
 export default function ClientLogin() {
   const navigate = useNavigate();
@@ -14,64 +14,78 @@ export default function ClientLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     if (!clientPhone || clientPhone.length < 10) return;
     setLoading(true);
     setError('');
-    setTimeout(() => {
-      setLoading(false);
-      setOtpSent(true);
-    }, 1000);
-  };
 
-  const handleClientLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (otpCode === '123456') {
-        navigate('/client');
+    try {
+      let response;
+      if (isRegisterMode) {
+        response = await clientAuthApi.registerOTP({
+          fullName: clientName,
+          mobile: clientPhone,
+        });
       } else {
-        setError('کد OTP اشتباه است');
+        response = await clientAuthApi.loginOTP({
+          mobile: clientPhone,
+        });
       }
-    }, 1000);
-  };
 
-  const handleClientRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!clientName.trim()) {
-      setError('لطفا نام کامل را وارد کنید');
-      return;
+      if (response.status === 200) {
+        setOtpSent(true);
+      } else {
+        setError(response.message || 'خطا در ارسال کد');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'خطا در ارسال کد');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (otpCode === '123456') {
+
+    try {
+      let response;
+      if (isRegisterMode) {
+        response = await clientAuthApi.registerVerify({
+          fullName: clientName,
+          mobile: clientPhone,
+          otp: otpCode,
+        });
+      } else {
+        response = await clientAuthApi.loginVerify({
+          mobile: clientPhone,
+          otp: otpCode,
+        });
+      }
+
+      if (response.accessToken) {
+        localStorage.setItem('clientToken', response.accessToken);
+        localStorage.setItem('clientRefreshToken', response.refreshToken || '');
+        localStorage.setItem('clientPatient', JSON.stringify(response.patient));
         navigate('/client');
       } else {
-        setError('کد OTP اشتباه است');
+        setError(response.message || 'کد OTP اشتباه است');
       }
-    }, 1000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'کد OTP اشتباه است');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-slate-100 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-sm">
-        {/* <button
-          onClick={() => navigate('/clinic-login')}
-          className="absolute top-4 left-4 p-2 text-slate-500 hover:text-slate-700 flex items-center gap-2"
-        >
-          <ArrowLeft size={18} className="rotate-180" />
-          <span className="text-sm">ورود مدیر کلینیک</span>
-        </button> */}
-
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-lg shadow-teal-200">
             <span className="text-white text-xl font-bold">CGP</span>
           </div>
-          {/* <h1 className="text-xl font-bold text-slate-800">{CLINIC_INFO.name}</h1> */}
           <p className="text-sm text-slate-500 mt-1">
             {isRegisterMode ? 'ثبت نام زیباجو' : 'ورود زیباجو'}
           </p>
@@ -131,7 +145,7 @@ export default function ClientLogin() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleClientLogin} className="space-y-4">
+                <form onSubmit={handleVerifyOTP} className="space-y-4">
                   <div className="bg-teal-50 rounded-xl p-3 mb-4">
                     <p className="text-sm text-teal-700">کد تایید به شماره {clientPhone} ارسال شد</p>
                     <button
@@ -247,7 +261,7 @@ export default function ClientLogin() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleClientRegister} className="space-y-4">
+                <form onSubmit={handleVerifyOTP} className="space-y-4">
                   <div className="bg-teal-50 rounded-xl p-3 mb-4">
                     <p className="text-sm text-teal-700">کد تایید به شماره {clientPhone} ارسال شد</p>
                     <button
@@ -300,17 +314,16 @@ export default function ClientLogin() {
 
           <div className="mt-4 text-center">
             <button 
-              onClick={() => setIsRegisterMode(!isRegisterMode)}
+              onClick={() => {
+                setIsRegisterMode(!isRegisterMode);
+                setOtpSent(false);
+                setError('');
+              }}
               className="text-sm text-teal-600 hover:underline"
             >
               {isRegisterMode ? 'حساب کاربری دارید؟ ورود' : 'حساب کاربری ندارید؟ ثبت نام'}
             </button>
           </div>
-        </div>
-
-        <div className="mt-4 bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center">
-          <p className="text-xs text-amber-700 font-medium mb-1">اطلاعات دموی ور��د</p>
-          <p className="text-xs text-amber-600">کد OTP: 123456</p>
         </div>
 
         <div className="flex items-center justify-center gap-2 mt-5 text-xs text-slate-400">

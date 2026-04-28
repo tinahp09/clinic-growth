@@ -1,11 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Eye, EyeOff, Lock, Loader2, Shield, User, ArrowLeft, QrCode } from 'lucide-react';
-import { CLINIC_INFO } from '../../data/mockData';
-
-function generateQRCode(text: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(text)}`;
-}
+import { Eye, EyeOff, Lock, Loader2, Shield, User, QrCode } from 'lucide-react';
+import { authApi } from '../../api/auth';
 
 export default function ClinicOwnerLogin() {
   const navigate = useNavigate();
@@ -13,7 +9,7 @@ export default function ClinicOwnerLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [showRepeatPassword, setShowRepeatPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   
@@ -26,9 +22,9 @@ export default function ClinicOwnerLogin() {
   const [ownerRepeatPassword, setOwnerRepeatPassword] = useState('');
 
   const clinicUrl = typeof window !== 'undefined' ? `${window.location.origin}/client` : 'http://localhost:5173/client';
-  const qrCodeUrl = generateQRCode(clinicUrl);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(clinicUrl)}`;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (showQRModal && !scanComplete) {
       const timer = setTimeout(() => {
         setScanComplete(true);
@@ -41,62 +37,84 @@ export default function ClinicOwnerLogin() {
     }
   }, [showQRModal, scanComplete]);
 
-  const handleClinicOwnerLogin = (e: React.FormEvent) => {
+  const handleClinicOwnerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (username === 'admin' && password === 'admin123') {
+    
+    try {
+      const response = await authApi.login({ username, password });
+      if (response.user) {
+        localStorage.setItem('token', response.accessToken);
+        localStorage.setItem('user', JSON.stringify(response.user));
         navigate('/admin/dashboard');
-      } else {
-        setError(true);
       }
-    }, 1000);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data?.error || 'نام کاربری یا رمز عبور اشتباه است';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleClinicOwnerRegister = (e: React.FormEvent) => {
+  const handleClinicOwnerRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     if (!clinicName.trim()) {
-      setError(true);
+      setError('لطفا نام کلینیک را وارد کنید');
       return;
     }
     if (!ownerUsername.trim()) {
-      setError(true);
+      setError('لطفا نام کاربری را وارد کنید');
       return;
     }
     if (ownerPassword !== ownerRepeatPassword) {
-      setError(true);
+      setError('رمزهای عبور مطابقت ندارند');
       return;
     }
-    if (ownerPassword.length < 4) {
-      setError(true);
+    if (ownerPassword.length < 8) {
+      setError('رمز عبور باید حداقل ۸ کاراکتر باشد');
       return;
     }
+    
     setLoading(true);
-    setTimeout(() => {
+    
+    try {
+      const response = await authApi.register({
+        clinicName: clinicName,
+        username: ownerUsername,
+        password: ownerPassword,
+        confirmPassword: ownerRepeatPassword,
+      });
+      if (response.user) {
+        localStorage.setItem('token', response.accessToken);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        navigate('/admin/dashboard');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data?.error || 'ثبت نام ناموفق بود';
+      setError(msg);
+    } finally {
       setLoading(false);
-      navigate('/admin/dashboard');
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-slate-100 flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-sm">
-        <button
-          onClick={() => setShowQRModal(true)}
-          className="absolute top-4 left-4 p-2 text-slate-500 hover:text-slate-700 flex items-center gap-2 bg-white rounded-full shadow-sm"
-        >
-          <QrCode size={18} className="text-teal-600" />
-          <span className="text-sm text-teal-600">QR Code ورود زیباجو</span>
-        </button>
+      <button
+        onClick={() => setShowQRModal(true)}
+        className="absolute top-4 left-4 p-2 text-slate-500 hover:text-slate-700 flex items-center gap-2 bg-white rounded-full shadow-sm"
+      >
+        <QrCode size={18} className="text-teal-600" />
+        <span className="text-sm text-teal-600">QR Code ورود زیباجو</span>
+      </button>
 
+      <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-lg shadow-teal-200">
             <span className="text-white text-xl font-bold">CGP</span>
           </div>
-          {/* <h1 className="text-xl font-bold text-slate-800">{CLINIC_INFO.name}</h1> */}
           <p className="text-sm text-slate-500 mt-1">
             {isRegisterMode ? 'ثبت نام مدیر کلینیک' : 'ورود مدیر کلینیک'}
           </p>
@@ -111,7 +129,7 @@ export default function ClinicOwnerLogin() {
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full bg-red-200 flex items-center justify-center text-xs font-bold">!</span>
-                  نام کاربری یا رمز عبور اشتباه است
+                  {error}
                 </div>
               )}
 
@@ -178,7 +196,7 @@ export default function ClinicOwnerLogin() {
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
                   <span className="w-4 h-4 rounded-full bg-red-200 flex items-center justify-center text-xs font-bold">!</span>
-                  اطلاعات وارد شده نامعتبر است
+                  {error}
                 </div>
               )}
 
@@ -204,7 +222,7 @@ export default function ClinicOwnerLogin() {
                       type="text"
                       value={ownerUsername}
                       onChange={e => setOwnerUsername(e.target.value)}
-                      placeholder="نام کاربری"
+                      placeholder="نام کاربری (انگلیسی)"
                       className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-left"
                       dir="ltr"
                     />
@@ -282,11 +300,6 @@ export default function ClinicOwnerLogin() {
               {isRegisterMode ? 'حساب کاربری دارید؟ ورود' : 'حساب کاربری ندارید؟ ثبت نام'}
             </button>
           </div>
-        </div>
-
-        <div className="mt-4 bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center">
-          <p className="text-xs text-amber-700 font-medium mb-1">اطلاعات دموی ورود</p>
-          <p className="text-xs text-amber-600">نام کاربری: admin / رمز: admin123</p>
         </div>
 
         <div className="flex items-center justify-center gap-2 mt-5 text-xs text-slate-400">
